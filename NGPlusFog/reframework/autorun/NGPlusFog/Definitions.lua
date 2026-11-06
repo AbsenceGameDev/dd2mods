@@ -30,7 +30,7 @@ Definitions.RESET_FOG_WHEN_MAKELOOPSAVEDATA_RUNS_ASSUMED_NEW_CYCLE_CREATION = tr
 
 --
 -- Tuning
-Definitions.SnapshotHistorySize   = 8     -- snapshot files (per save slot). In case save files are reverted, the previous last save states are kept
+Definitions.SnapshotHistorySize   = 16    -- snapshot files (per save slot). In case save files are reverted, the previous last save states are kept
 Definitions.PlayTimeMatchSeconds  = 2.0   -- slack for snapshot playtime check when matching correct snapshot 
 Definitions.LoadPickDelaySeconds  = 0.5   -- time to delay the slot pick when loadGameSaveData runs
 Definitions.TickIntervalSeconds   = 0.25  -- update/refresh interval for fog reveal

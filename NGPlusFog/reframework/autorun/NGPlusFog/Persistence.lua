@@ -151,7 +151,9 @@ local function SaveSlot(Slot)
   local PlayTime, GameTime = ReadTimes()
   local Snapshot = { version = 3, seq = FileState.Sequence + 1, play = PlayTime, game = GameTime, masks = InstanceState.SavedMaskHex }
 
-  local bDidWriteSnapshot = pcall(json.dump_file, SlotFileBase(Slot) .. "_h" .. FileState.NextRingIndex .. ".json", Snapshot) == true;
+  -- dump_file reports a failed write by returning false; nil (no return value) counts as written
+  local bCallSucceeded, WriteResult = pcall(json.dump_file, SlotFileBase(Slot) .. "_h" .. FileState.NextRingIndex .. ".json", Snapshot)
+  local bDidWriteSnapshot = bCallSucceeded == true and WriteResult ~= false
   if bDidWriteSnapshot == true then
     FileState.Sequence, FileState.NextRingIndex = FileState.Sequence + 1, (FileState.NextRingIndex + 1) % SnapshotHistorySize
   end
@@ -166,7 +168,22 @@ end
 --
 -- Save and load hooks
 
-local function ReadSlotArgument(Argument) return TryCall(function() return sdk.to_int64(Argument) & 0xFFFFFFFF end) end
+--- @brief The one form slots are stored and compared in: unsigned 32-bit (autosave -1 -> 4294967295).
+--- Accepts an integer or an integral float, signed or unsigned; anything else is nil.
+local function NormalizeSlot(Slot)
+  local IntegerSlot = type(Slot) == "number" and math.tointeger(Slot) or nil
+  if IntegerSlot == nil then return nil end
+  return IntegerSlot & 0xFFFFFFFF
+end
+
+--- @brief Slot as the game numbers it (autosaves negative), for display only
+local function SignedSlot(Slot)
+  local UnsignedSlot = NormalizeSlot(Slot)
+  if UnsignedSlot == nil then return nil end
+  return UnsignedSlot - ((UnsignedSlot >> 31) & 1) * 0x100000000
+end
+
+local function ReadSlotArgument(Argument) return NormalizeSlot(TryCall(sdk.to_int64, Argument)) end
 local SlotRequestParameters <const> = "(System.Int32, app.SaveDataManager.SaveLoadRequestArgs, System.UInt32[])"
 
 local function InstallHooks()
@@ -181,7 +198,12 @@ local function InstallHooks()
 
   InstallHook(GuiManagerType, "loadGameSaveData(app.SaveDataBase)", nil, function(ReturnValue)
     local SaveDataManager = sdk.get_managed_singleton(SaveDataManagerType)
-    InstanceState.CurrentSlot = TryCall(function() return SaveDataManager:call("getLoadingGameSlotId") end) or InstanceState.RequestedLoadSlot
+    local LoadingSlot = NormalizeSlot(TryCall(function() return SaveDataManager:call("getLoadingGameSlotId") end))
+    local RequestedSlot = InstanceState.RequestedLoadSlot
+    local bSlotSourcesDisagree = LoadingSlot ~= nil and RequestedSlot ~= nil and LoadingSlot ~= RequestedSlot
+    if bSlotSourcesDisagree == true then Increment("load_slot_sources_disagree") end
+
+    InstanceState.CurrentSlot = LoadingSlot or RequestedSlot
     InstanceState.GameMasks, InstanceState.LastIndexTime = {}, -math.huge
     LoadSlot(InstanceState.CurrentSlot)
 
@@ -205,6 +227,7 @@ return {
   PickPendingSnapshot = PickPendingSnapshot,
   SaveSlot            = SaveSlot,
   ResetNgPlusFog      = ResetNgPlusFog,
+  SignedSlot          = SignedSlot,
   InstallHooks        = InstallHooks,
 
   -- Exposed for tests

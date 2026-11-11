@@ -6,9 +6,11 @@
 -- NG+ Fog
 local Definitions = require("NGPlusFog.Definitions");
 local State       = require("NGPlusFog.State");
+local Core        = require("NGPlusFog.Core");
 local Persistence = require("NGPlusFog.Persistence");
 local Backups     = require("NGPlusFog.Backups");
 local LoadMenu    = require("NGPlusFog.LoadMenu");
+local Preview     = require("NGPlusFog.Preview");
 
 local InstanceState                 = State.Instance;
 local FormatPlayTime, SignedSlot    = Persistence.FormatPlayTime, Persistence.SignedSlot;
@@ -235,6 +237,8 @@ local function DrawSelector()
 
   local bLoadClicked = imgui.button("Load selected fog data into NG+ fog") == true;
   if bLoadClicked == true then Backups.LoadFogFile(SelectedRow) end;
+
+  Core.TreeNode("Preview: selected fog data against the current NG+ fog", function() Preview.Draw(SelectedRow) end);
 end
 
 return {

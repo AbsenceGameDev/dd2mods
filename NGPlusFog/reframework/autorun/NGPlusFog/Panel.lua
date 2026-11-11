@@ -17,6 +17,7 @@ local ProbeLog    = require("NGPlusFog.ProbeLog");
 local InstanceSettings, InstanceState = State.Settings, State.Instance
 local GetField, ArrayLength, Components, Describe, Now = Core.GetField, Core.ArrayLength, Core.Components, Core.Describe, Core.Now
 local CountRevealedCells = Masks.CountRevealedCells
+local TreeNode = Core.TreeNode;
 local IsMaskOffSignature <const> = Definitions.IsMaskOffSignature
 
 --
@@ -73,16 +74,6 @@ end
 local function SettingCheckbox(Label, SettingName)
   local bChanged, bValue = imgui.checkbox(Label, InstanceSettings[SettingName])
   if bChanged == true then InstanceSettings[SettingName] = bValue; State.SaveSettings() end
-end
-
---- @brief Runs a tree node's body protected: an error is shown as text and the node is always closed
-local function TreeNode(Label, DrawBody)
-  if imgui.tree_node(Label) == false then return end
-
-  local bSucceeded, ErrorMessage = pcall(DrawBody)
-  if bSucceeded == false then imgui.text("panel error: " .. tostring(ErrorMessage)) end
-
-  imgui.tree_pop()
 end
 
 local function DrawDiagnostics()

@@ -50,6 +50,7 @@ local InstanceState = {
     }, 
   ProbeEvents = nil,            -- list of { time, event, details }: probe_events.json, loaded on first use (see ProbeLog)
   LoadMenu = {EnumNames = {}},  -- load menu rows (slots.json, loaded on first use), enum names, open menu, last slot calculation
+  Preview = {},                -- fog preview: selected file and its hex, cached runs, text lines, capability probe flag
   Counters = {},
   HookResults = {},
   RevealedCellCounts = {},

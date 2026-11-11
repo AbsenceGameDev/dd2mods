@@ -80,6 +80,16 @@ local function InstallHook(TypeName, Signature, PreHook, PostHook)
   InstanceState.HookResults[TypeName .. "::" .. Signature] = Method ~= nil and pcall(sdk.hook, Method, PreHook, PostHook)
 end
 
+--- @brief Runs a tree node's body protected. Errors are shown as text and the node always pops
+local function TreeNode(Label, DrawBody)
+  if imgui.tree_node(Label) == false then return end
+
+  local bSucceeded, ErrorMessage = pcall(DrawBody)
+  if bSucceeded == false then imgui.text("panel error: " .. tostring(ErrorMessage)) end
+
+  imgui.tree_pop()
+end
+
 --- @brief True while the NG+ fog of war is shown (fog on, NG+ save, real-progress view off); cached per tick, read by hooks
 local function IsNgPlusFogShown() return InstanceState.bActive == true and InstanceSettings.bShowRealMapProgress == false end
 
@@ -99,4 +109,5 @@ return {
   DescribeFields   = DescribeFields,
   InstallHook      = InstallHook,
   IsNgPlusFogShown = IsNgPlusFogShown,
+  TreeNode         = TreeNode,
 }

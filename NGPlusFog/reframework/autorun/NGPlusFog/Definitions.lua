@@ -58,13 +58,27 @@ Definitions.ParkedCoordinate      = 1.0e6 -- coord on map where 'hidden' icons a
 Definitions.CellKeyStride         = 8192  --
 
 --
+-- Fog preview (selector details). Colours are ABGR (0xAABBGGRR), per imgui draw expectations.
+Definitions.OverworldColumns      = 512;  -- overworld mask columns (measured 2026-11-05: 512 x 516 cells of 16 m)
+Definitions.PreviewBlockCells     = 4;    -- overlay: one preview block per 4 x 4 cells (128 x 129 blocks)
+Definitions.PreviewPixelsPerBlock = 2;    -- overlay: 256 x 258 pixels
+Definitions.PreviewTextBlockCells = 8;    -- text mode: one character per 8 x 8 cells (64 x 65 characters)
+Definitions.PreviewRebuildSeconds = 2.0;  -- while exploring with the preview open, it is rebuilt at maximum this frequently
+Definitions.PreviewColors = { Both = 0xFFC9A37A, OnlyCurrent = 0xFF4FB0E0, OnlySelected = 0xFF6AB34F, Fog = 0xFF312D2A };
+Definitions.PreviewCharacters = { Both = "#", OnlyCurrent = "-", OnlySelected = "+", Fog = "." };
+
+--
 -- Field lists
 Definitions.GeometryFields = { "BasePos", "EdgePos", "DispRange", "MaskNum", "Interval", "IntervalHalf", "IntervalShift" }
 Definitions.IconListFields = { "MapIconInfoList", "OriginAreaMapIconInfoList", "NRDAreaMapIconInfoList" }
 
 --
 -- Settings
-Definitions.SettingsDefaults   = { bFogOfWar = true, bShowRealMapProgress = false }
+Definitions.SettingsDefaults   = {
+  bFogOfWar = true, bShowRealMapProgress = false,
+  PreviewMode = "Overlay",      -- @todo confirm draw paints over the panel. "Overlay" (draw.filled_rect over the panel) or "Text"
+  bPreviewFlipVertical = false, -- @todo confirm that mask row 0 is the top of the game's map
+}
 -- Settings file keys left from prototyping, some of my local save dta is stored it in this format
 Definitions.PrototypeSettingsKeys = { bFogOfWar = "enabled", bShowRealMapProgress = "show_real_map_progress" }
 

@@ -133,6 +133,13 @@ local function ScanSlot(Slot)
   return Entries;
 end
 
+--- @brief Index entries of a slot
+local function GetSlotEntries(Slot, bAllowScan)
+  local FileState = InstanceState.SlotFileState[Slot];
+  if FileState ~= nil and FileState.Entries ~= nil then return FileState.Entries end;
+  return ReadSlotIndex(Slot) or (bAllowScan == true and ScanSlot(Slot) or nil);
+end
+
 --- @brief The fog data of an index entry, or nil if the file is unreadable or holds another snapshot than the index says
 local function ReadEntrySnapshot(Entry)
   local Snapshot = ReadValidFile(Entry.file);
@@ -320,6 +327,7 @@ return {
   SaveSlot            = SaveSlot,
   ResetNgPlusFog      = ResetNgPlusFog,
   SignedSlot          = SignedSlot,
+  GetSlotEntries      = GetSlotEntries,
   InstallHooks        = InstallHooks,
 
   -- Exposed for tests

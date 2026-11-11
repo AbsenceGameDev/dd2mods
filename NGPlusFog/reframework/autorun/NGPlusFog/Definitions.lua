@@ -28,6 +28,15 @@ Definitions.ManagedArrayByteLengthFieldOffset = 0x1C
 -- Unconfirmed behaviour
 Definitions.RESET_FOG_WHEN_MAKELOOPSAVEDATA_RUNS_ASSUMED_NEW_CYCLE_CREATION = true -- @todo: need to test on a save that passes NG+ during the session
 
+-- Save slot { character index, save type }.
+-- @todo: confirm against SaveSlotNo and SaveDataType of the load menu rows (app.ui030901.MainListInfo).
+-- @note The game calls the manual save "Last interim save"
+Definitions.ASSUMED_SAVE_SLOT_LAYOUT_PER_CHARACTER = {
+  [-1] = { 0, "Autosave" }, [0] = { 0, "Last interim save" }, [4] = { 0, "Inn save" },
+  [-2] = { 1, "Autosave" }, [1] = { 1, "Last interim save" }, [5] = { 1, "Inn save" },
+  [-3] = { 2, "Autosave" }, [2] = { 2, "Last interim save" }, [6] = { 2, "Inn save" },
+};
+
 --
 -- Tuning
 Definitions.SnapshotHistorySize   = 16    -- snapshot files (per save slot). In case save files are reverted, the previous last save states are kept

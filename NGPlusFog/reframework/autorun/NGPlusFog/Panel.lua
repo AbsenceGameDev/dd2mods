@@ -12,6 +12,7 @@ local Masks       = require("NGPlusFog.Masks")
 local Persistence = require("NGPlusFog.Persistence")
 local Backups     = require("NGPlusFog.Backups")
 local Selector    = require("NGPlusFog.Selector");
+local ProbeLog    = require("NGPlusFog.ProbeLog");
 
 local InstanceSettings, InstanceState = State.Settings, State.Instance
 local GetField, ArrayLength, Components, Describe, Now = Core.GetField, Core.ArrayLength, Core.Components, Core.Describe, Core.Now
@@ -57,6 +58,7 @@ local function Probe()
     real_progress_cells = GameArray ~= nil and CountRevealedCells(GameArray, ArrayLength(GameArray)) or nil,
     ngplus_fog_revealed_here = bNgPlusRevealedHere, real_progress_revealed_here = bRealRevealedHere,
     overworld_geometry = Private ~= nil and Core.DescribeFields(Private.MaskInfo, Definitions.GeometryFields) or nil,
+    verification = ProbeLog.DescribeVerification(),
   }
 
   local ReportPath = Definitions.DataDirectory .. "probe_" .. os.time() .. ".json"
@@ -107,6 +109,10 @@ local function DrawDiagnostics()
     for CounterName, CounterValue in pairs(InstanceState.Counters) do imgui.text(string.format("  %-32s %d", CounterName, CounterValue)) end
   
   for HookName, bInstalled in pairs(InstanceState.HookResults) do if bInstalled == false then imgui.text("  HOOK FAILED: " .. HookName) end end
+
+  TreeNode("Verification (" .. ProbeLog.CountEvents() .. " events in probe_events.json)", function()
+    for _, Line in ipairs(ProbeLog.DescribeVerification()) do imgui.text(string.format("  %-20s %s", Line.Item, Line.Status)) end;
+  end);
 end
 
 local function DrawPanel()

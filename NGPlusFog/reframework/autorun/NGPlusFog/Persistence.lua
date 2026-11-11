@@ -9,6 +9,7 @@ local Definitions = require("NGPlusFog.Definitions")
 local State       = require("NGPlusFog.State")
 local Core        = require("NGPlusFog.Core")
 local Masks       = require("NGPlusFog.Masks")
+local ProbeLog    = require("NGPlusFog.ProbeLog");
 
 local InstanceState = State.Instance
 local TryCall, Now, Increment, InstallHook = Core.TryCall, Core.Now, Core.Increment, Core.InstallHook
@@ -225,6 +226,12 @@ local function PickPendingSnapshot()
   InstanceState.SavedMaskHex = Snapshot ~= nil and Snapshot.masks or {}
   InstanceState.LoadedFogNote, InstanceState.PlayTimeAtLoad = Note, PlayTime
 
+  -- Probe: play time read at load (PlayTimeGetter) and the picked (selected) snapshot
+  ProbeLog.RecordEvent("fog_picked", {
+    slot = Slot, play_time = PlayTime, picked_seq = Entry ~= nil and Entry.seq or nil, picked_play = Entry ~= nil and Entry.play or nil,
+    picked_file = Entry ~= nil and Entry.file or nil, note = Note,
+  });
+
   ApplySavedMasks()
 end
 
@@ -297,10 +304,17 @@ local function InstallHooks()
 
   InstallHook(GuiManagerType, "loadGameSaveData(app.SaveDataBase)", nil, function(ReturnValue)
     local SaveDataManager = sdk.get_managed_singleton(SaveDataManagerType)
-    local LoadingSlot = NormalizeSlot(TryCall(function() return SaveDataManager:call("getLoadingGameSlotId") end));
+    local RawLoadingSlot = TryCall(function() return SaveDataManager:call("getLoadingGameSlotId") end);
+    local LoadingSlot = NormalizeSlot(RawLoadingSlot);
     local RequestedSlot = InstanceState.RequestedLoadSlot;
     local bSlotSourcesDisagree = LoadingSlot ~= nil and RequestedSlot ~= nil and LoadingSlot ~= RequestedSlot;
     if bSlotSourcesDisagree == true then Increment("load_slot_sources_disagree") end;
+
+    --probe checking whether the data sources agree and  getLoadingGameSlotId returns
+    ProbeLog.RecordEvent("save_loaded", {
+      game_slot_raw = RawLoadingSlot, game_slot_raw_type = math.type(RawLoadingSlot) or type(RawLoadingSlot),
+      requested_slot = RequestedSlot, chosen_slot = LoadingSlot or RequestedSlot, sources_disagree = bSlotSourcesDisagree,
+    });
 
     InstanceState.CurrentSlot = LoadingSlot or RequestedSlot;
     InstanceState.GameMasks, InstanceState.LastIndexTime = {}, -math.huge
@@ -312,6 +326,9 @@ local function InstallHooks()
   InstallHook(GuiManagerType, "makeLoopSaveData()", nil, function(ReturnValue)
     local bResetOnNewCycle = Definitions.RESET_FOG_WHEN_MAKELOOPSAVEDATA_RUNS_ASSUMED_NEW_CYCLE_CREATION == true
     if bResetOnNewCycle == true then ResetNgPlusFog(); Increment("new_cycle_resets") end
+
+    -- probr when makeLoopSaveData runs (not tested yet but my assumption is that it only runs when the a new NG+ cycle is created)
+    ProbeLog.RecordEvent("make_loop_save_data", { play_time = ReadTimes(), slot = InstanceState.CurrentSlot, fog_reset = bResetOnNewCycle });
     
     return ReturnValue
   end)

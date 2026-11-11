@@ -11,6 +11,7 @@ local Scope       = require("NGPlusFog.Scope")
 local Masks       = require("NGPlusFog.Masks")
 local Persistence = require("NGPlusFog.Persistence")
 local Backups     = require("NGPlusFog.Backups")
+local Selector    = require("NGPlusFog.Selector");
 
 local InstanceSettings, InstanceState = State.Settings, State.Instance
 local GetField, ArrayLength, Components, Describe, Now = Core.GetField, Core.ArrayLength, Core.Components, Core.Describe, Core.Now
@@ -121,6 +122,8 @@ local function DrawPanel()
   if imgui.button("Reset NG+ fog (this slot)") == true then Persistence.ResetNgPlusFog(); Persistence.SaveSlot(Slot) end; imgui.same_line()
   if imgui.button("Copy real progress into NG+ fog") == true then Backups.CopyRealProgress() end; imgui.same_line()
   if imgui.button("Reload slot file") == true then Persistence.LoadSlot(Slot) end
+
+  TreeNode("Fog data selector (character, save, fog data)", Selector.Draw);
 
   local FogFiles, FogFileNames = Backups.GetAllFogFiles()
   if imgui.button("Refresh fog file list") == true then FogFiles, FogFileNames = Backups.GetAllFogFiles(true) end

@@ -19,6 +19,9 @@ Definitions.SetMaskOffSignature = "setMaskOff(via.vec3)"
 Definitions.IsMaskOffSignature  = "isMaskOff(via.vec3)"
 Definitions.PlayTimeGetter      = "get_WholePlayTime" -- app.TimeManager; @todo: check if restored from the save on load
 Definitions.OverworldMaskKey    = "F" -- GuiManager.MapMaskField; local area masks are "L<index>"
+Definitions.LoadMenuType        = "app.ui030901"; -- the game's load menu: one MainListInfo row per save
+Definitions.SaveDataTypeEnum    = "app.ui030901.SaveDataType";
+Definitions.JobEnum             = "app.Character.JobEnum";
 
 -- layout for MaskBit access
 Definitions.ManagedArrayByteDataOffset = 0x20
@@ -35,6 +38,12 @@ Definitions.ASSUMED_SAVE_SLOT_LAYOUT_PER_CHARACTER = {
   [-1] = { 0, "Autosave" }, [0] = { 0, "Last interim save" }, [4] = { 0, "Inn save" },
   [-2] = { 1, "Autosave" }, [1] = { 1, "Last interim save" }, [5] = { 1, "Inn save" },
   [-3] = { 2, "Autosave" }, [2] = { 2, "Last interim save" }, [6] = { 2, "Inn save" },
+};
+
+-- Job enum name -> vocation. @todo: confirm against the job shown in the load menu (load_menu_row events record job_enum).
+Definitions.ASSUMED_JOB_NAMES = {
+  Job01 = "Fighter", Job02 = "Archer", Job03 = "Mage", Job04 = "Thief", Job05 = "Warrior",
+  Job06 = "Sorcerer", Job07 = "Mystic Spearhand", Job08 = "Magick Archer", Job09 = "Trickster", Job10 = "Warfarer",
 };
 
 --

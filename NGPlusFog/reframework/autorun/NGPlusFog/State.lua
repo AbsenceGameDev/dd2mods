@@ -48,6 +48,8 @@ local InstanceState = {
       RowIndexBySlot = {}, 
       ScannedSlots = {} 
     }, 
+  ProbeEvents = nil,            -- list of { time, event, details }: probe_events.json, loaded on first use (see ProbeLog)
+  LoadMenu = {EnumNames = {}},  -- load menu rows (slots.json, loaded on first use), enum names, open menu, last slot calculation
   Counters = {},
   HookResults = {},
   RevealedCellCounts = {},

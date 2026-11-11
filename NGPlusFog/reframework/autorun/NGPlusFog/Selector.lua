@@ -8,6 +8,7 @@ local Definitions = require("NGPlusFog.Definitions");
 local State       = require("NGPlusFog.State");
 local Persistence = require("NGPlusFog.Persistence");
 local Backups     = require("NGPlusFog.Backups");
+local LoadMenu    = require("NGPlusFog.LoadMenu");
 
 local InstanceState                 = State.Instance;
 local FormatPlayTime, SignedSlot    = Persistence.FormatPlayTime, Persistence.SignedSlot;
@@ -27,10 +28,22 @@ local function DescribeSlot(Slot)
   return Layout[1], Layout[2];
 end
 
-local function CharacterLabel(CharacterKey)
-  if CharacterKey == UnrecognisedCharacter then return "Other slots" end;
+--- @brief Returns label using Name, level, vocation  from the character's recorded load menu rows, after loadmenu has been opened; 
+--- @note "##" suffix to keep the button unique if two characters read the same label
+local function CharacterLabel(CharacterKey, Slots)
+  local IdSuffix = "##character" .. CharacterKey;
+  if CharacterKey == UnrecognisedCharacter then return "Other slots" .. IdSuffix end;
 
-  return "Character " .. (CharacterKey + 1);
+  for _, Slot in ipairs(Slots) do
+    local Row = LoadMenu.GetRow(SignedSlot(Slot));
+    local Arisen, Pawn = Row ~= nil and Row.arisen or nil, Row ~= nil and Row.pawn or nil;
+    if Arisen ~= nil and Arisen.name ~= nil then
+      local PawnText = (Pawn ~= nil and Pawn.name ~= nil) and string.format(" · pawn %s Lv %s", Pawn.name, tostring(Pawn.level)) or "";
+      return string.format("%s · Lv %s %s%s", Arisen.name, tostring(Arisen.level), Arisen.job_name or Arisen.job_enum or "", PawnText) .. IdSuffix;
+    end
+  end
+
+  return "Character " .. (CharacterKey + 1) .. IdSuffix;
 end
 
 --- @brief Stored slots with snapshot files, grouped by character (character key -> slots, autosave first).
@@ -178,7 +191,9 @@ local function DrawSelector()
 
       local LoadedMark = CharacterKey == LoadedCharacter and " (loaded)" or "";
       local Latest = NewestPlayTime ~= nil and (" · latest " .. FormatPlayTime(NewestPlayTime)) or "";
-      CharacterChoices[#CharacterChoices + 1] = { Key = CharacterKey, Label = CharacterLabel(CharacterKey) .. LoadedMark .. Latest };
+      local Label = CharacterLabel(CharacterKey, Slots);
+      local NameText, IdSuffix = Label:match("^(.-)(##.*)$");
+      CharacterChoices[#CharacterChoices + 1] = { Key = CharacterKey, Label = NameText .. LoadedMark .. Latest .. IdSuffix };
     end
   end
 
@@ -192,9 +207,11 @@ local function DrawSelector()
   for _, Slot in ipairs(Characters[Selector.CharacterKey]) do
     local _CharacterKey, SaveType = DescribeSlot(Slot);
     local Newest = NewestEntry(Slot);
+    local Row = LoadMenu.GetRow(SignedSlot(Slot));
+    local Place = (Row ~= nil and Row.place ~= nil) and (" · " .. Row.place) or "";
     local LoadedMark = Slot == LoadedSlot and " (loaded)" or "";
     local Latest = Newest ~= nil and (" · " .. FormatPlayTime(Newest.play)) or "";
-    SaveChoices[#SaveChoices + 1] = { Key = Slot, Label = SaveType .. LoadedMark .. Latest };
+    SaveChoices[#SaveChoices + 1] = { Key = Slot, Label = SaveType .. Place .. LoadedMark .. Latest };
   end
 
   imgui.text("2  Save");

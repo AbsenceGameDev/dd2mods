@@ -11,6 +11,7 @@ local Scope       = require("NGPlusFog.Scope")
 local Icons       = require("NGPlusFog.Icons")
 local Tick        = require("NGPlusFog.Tick")
 local Panel       = require("NGPlusFog.Panel")
+local LoadMenu    = require("NGPlusFog.LoadMenu");
 
 --
 -- Install
@@ -18,5 +19,6 @@ Persistence.InstallHooks()
 Masks.InstallHooks()
 Scope.InstallHooks()
 Icons.InstallHooks()
+LoadMenu.InstallHooks();
 Tick.Install()
 Panel.Install()

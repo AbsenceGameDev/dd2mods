@@ -19,14 +19,13 @@ local State       = require("NGPlusFog.State");
 local Core        = require("NGPlusFog.Core");
 local Masks       = require("NGPlusFog.Masks");
 local Persistence = require("NGPlusFog.Persistence");
-local ProbeLog    = require("NGPlusFog.ProbeLog");
+local Widgets     = require("NGPlusFog.Widgets");
 
 local InstanceSettings, InstanceState = State.Settings, State.Instance;
 local OverworldMaskKey <const>      = Definitions.OverworldMaskKey;
 local OverworldColumns <const>      = Definitions.OverworldColumns;
-local PixelsPerBlock <const>        = Definitions.PreviewPixelsPerBlock;
+local BlockCells <const>            = Definitions.PreviewBlockCells;
 local PreviewRebuildSeconds <const> = Definitions.PreviewRebuildSeconds;
-local PreviewModes <const>          = { "Overlay", "Text" };
 -- Block code = 2 * revealed in the selected data + revealed in the current fog
 local CodeNames <const>             = { [0] = "Fog", [1] = "OnlyCurrent", [2] = "OnlySelected", [3] = "Both" };
 
@@ -93,7 +92,8 @@ end
 
 --- @brief The cached preview of teh fog data. 
 --- @note rebuilt when data goes stale (updated selection, updated settings, etc).
-local function GetPreviewRuns(FogFile, BlockCells)
+--- @return built runs of merged blocks. 
+local function GetPreviewRuns(FogFile)
   local Preview = InstanceState.Preview;
   local SettingsKey = FogFile.file .. "|" .. BlockCells .. "|" .. tostring(InstanceSettings.bPreviewFlipVertical);
   local bSettingsChanged = Preview.SettingsKey ~= SettingsKey;
@@ -103,84 +103,39 @@ local function GetPreviewRuns(FogFile, BlockCells)
   local CurrentMask = InstanceState.PrivateMasks[OverworldMaskKey];
   local CurrentHex = CurrentMask ~= nil and Masks.HexOf(CurrentMask) or "";
   Preview.Built = BuildRuns(GetSelectedHex(FogFile), CurrentHex, BlockCells, InstanceSettings.bPreviewFlipVertical);
-  Preview.SettingsKey, Preview.Generation, Preview.BuildTime, Preview.TextLines = SettingsKey, InstanceState.ExplorationGeneration, Core.Now(), nil;
+  Preview.SettingsKey, Preview.Generation, Preview.BuildTime = SettingsKey, InstanceState.ExplorationGeneration, Core.Now();
   return Preview.Built;
 end
 
 --
 -- Drawing
 
---- @brief Drawing functions for overlay mode. 
---- @note not tested
-local function GetOverlayCapabilities()
-  local Capabilities = {
-    draw_filled_rect = type(draw) == "table" and type(draw.filled_rect) == "function",
-    get_cursor_screen_pos = type(imgui.get_cursor_screen_pos) == "function",
-    invisible_button = type(imgui.invisible_button) == "function",
-  };
-  return Capabilities, Capabilities.draw_filled_rect and Capabilities.get_cursor_screen_pos and Capabilities.invisible_button;
+--- @brief Size in pixels of the preview drawn at most MaxWidth wide
+local function MeasurePreview(FogFile, MaxWidth)
+  local Built = GetPreviewRuns(FogFile);
+  local PixelsPerBlock = math.max(1, math.floor(MaxWidth / math.max(1, Built.BlockColumns)));
+  return Built.BlockColumns * PixelsPerBlock, Built.BlockRows * PixelsPerBlock, PixelsPerBlock;
 end
 
---- @brief Logs once per session which drawing functions exist
-local function RecordCapabilities(Capabilities)
-  if InstanceState.Preview.bCapabilitiesRecorded == true then return end;
-
-  InstanceState.Preview.bCapabilitiesRecorded = true;
-  Capabilities.mode, Capabilities.flip_vertical = InstanceSettings.PreviewMode, InstanceSettings.bPreviewFlipVertical;
-  ProbeLog.RecordEvent("preview_capabilities", Capabilities);
-end
-
-local function DrawOverlay(Built)
-  local Width, Height = Built.BlockColumns * PixelsPerBlock, Built.BlockRows * PixelsPerBlock;
-  local Origin = imgui.get_cursor_screen_pos();
-  imgui.invisible_button("##fogpreview", Vector2f.new(Width, Height));
-
+--- @brief Draws the preview of a fog file (a selector row) against the current NG+ fog at X, Y; 
+--- @return width and height
+local function DrawPreview(DrawList, FogFile, X, Y, MaxWidth)
+  local Built = GetPreviewRuns(FogFile);
+  local Width, Height, PixelsPerBlock = MeasurePreview(FogFile, MaxWidth);
   local Colors = Definitions.PreviewColors;
-  draw.filled_rect(Origin.x, Origin.y, Width, Height, Colors.Fog);
+
+  Widgets.Rect(DrawList, X, Y, Width, Height, Colors.Fog, nil, 0.0);
   for _, Run in ipairs(Built.Runs) do
-    draw.filled_rect(Origin.x + Run[2] * PixelsPerBlock, Origin.y + Run[1] * PixelsPerBlock, Run[3] * PixelsPerBlock, PixelsPerBlock, Colors[CodeNames[Run[4]]]);
-  end
-end
-
-local function DrawText(Built)
-  local Preview = InstanceState.Preview;
-  if Preview.TextLines == nil then
-    local Characters, Grid = Definitions.PreviewCharacters, {};
-    for BlockRow = 0, Built.BlockRows - 1 do Grid[BlockRow] = string.rep(Characters.Fog, Built.BlockColumns) end;
-    for _, Run in ipairs(Built.Runs) do
-      local Line = Grid[Run[1]];
-      Grid[Run[1]] = Line:sub(1, Run[2]) .. string.rep(Characters[CodeNames[Run[4]]], Run[3]) .. Line:sub(Run[2] + Run[3] + 1);
-    end
-    Preview.TextLines = Grid;
+    local RunX, RunY = X + Run[2] * PixelsPerBlock, Y + Run[1] * PixelsPerBlock;
+    DrawList:add_rect_filled(Vector2f.new(RunX, RunY), Vector2f.new(RunX + Run[3] * PixelsPerBlock, RunY + PixelsPerBlock), Colors[CodeNames[Run[4]]], 0.0, 0);
   end
 
-  for BlockRow = 0, Built.BlockRows - 1 do imgui.text(Preview.TextLines[BlockRow]) end;
-end
-
---- @brief Preview of a fog file (a selector row) against the current NG+ fog, with its mode and orientation settings
-local function DrawPreview(FogFile)
-  local Capabilities, bCanDrawOverlay = GetOverlayCapabilities();
-  RecordCapabilities(Capabilities);
-
-  local ModeIndex = InstanceSettings.PreviewMode == "Text" and 2 or 1;
-  local bModeChanged, NewModeIndex = imgui.combo("Preview mode", ModeIndex, PreviewModes);
-  if bModeChanged == true then InstanceSettings.PreviewMode = PreviewModes[NewModeIndex]; State.SaveSettings() end;
-  imgui.same_line();
-  local bFlipChanged, bFlip = imgui.checkbox("Flip vertically", InstanceSettings.bPreviewFlipVertical);
-  if bFlipChanged == true then InstanceSettings.bPreviewFlipVertical = bFlip; State.SaveSettings() end;
-
-  local bOverlay = InstanceSettings.PreviewMode ~= "Text" and bCanDrawOverlay == true;
-  if InstanceSettings.PreviewMode ~= "Text" and bCanDrawOverlay == false then imgui.text("Overlay drawing is not available in this REFramework version: showing text.") end;
-  local Characters = Definitions.PreviewCharacters;
-  imgui.text(bOverlay == true and "Blue: revealed in both · Green: only in the selected data · Amber: only in the current fog (a load hides it)"
-    or string.format("%s both · %s only selected · %s only current (a load hides it) · %s fog", Characters.Both, Characters.OnlySelected, Characters.OnlyCurrent, Characters.Fog));
-
-  local Built = GetPreviewRuns(FogFile, bOverlay == true and Definitions.PreviewBlockCells or Definitions.PreviewTextBlockCells);
-  if bOverlay == true then DrawOverlay(Built) else DrawText(Built) end;
+  return Width, Height;
 end
 
 return {
-  Draw = DrawPreview,
+  Draw    = DrawPreview,
+  Measure = MeasurePreview,
 
   -- Exposed for tests
   BuildRuns = BuildRuns,

@@ -32,12 +32,11 @@ Definitions.ManagedArrayByteLengthFieldOffset = 0x1C
 Definitions.RESET_FOG_WHEN_MAKELOOPSAVEDATA_RUNS_ASSUMED_NEW_CYCLE_CREATION = true -- @todo: need to test on a save that passes NG+ during the session
 
 -- Save slot { character index, save type }.
--- @todo: confirm against SaveSlotNo and SaveDataType of the load menu rows (app.ui030901.MainListInfo).
--- @note The game calls the manual save "Last interim save"
+-- @note based on games save slot numbering
 Definitions.ASSUMED_SAVE_SLOT_LAYOUT_PER_CHARACTER = {
-  [-1] = { 0, "Autosave" }, [0] = { 0, "Last interim save" }, [4] = { 0, "Inn save" },
-  [-2] = { 1, "Autosave" }, [1] = { 1, "Last interim save" }, [5] = { 1, "Inn save" },
-  [-3] = { 2, "Autosave" }, [2] = { 2, "Last interim save" }, [6] = { 2, "Inn save" },
+  [0] = { 0, "Autosave" }, [4] = { 0, "Last interim save" }, [1] = { 0, "Inn save" },
+  [5] = { 1, "Autosave" }, [9] = { 1, "Last interim save" }, [6] = { 1, "Inn save" },
+  [10] = { 2, "Autosave" }, [14] = { 2, "Last interim save" }, [11] = { 2, "Inn save" },
 };
 
 -- Job enum name -> vocation. @todo: confirm against the job shown in the load menu (load_menu_row events record job_enum).
@@ -61,11 +60,8 @@ Definitions.CellKeyStride         = 8192  --
 -- Fog preview (selector details). Colours are ABGR (0xAABBGGRR), per imgui draw expectations.
 Definitions.OverworldColumns      = 512;  -- overworld mask columns (measured 2026-11-05: 512 x 516 cells of 16 m)
 Definitions.PreviewBlockCells     = 4;    -- overlay: one preview block per 4 x 4 cells (128 x 129 blocks)
-Definitions.PreviewPixelsPerBlock = 2;    -- overlay: 256 x 258 pixels
-Definitions.PreviewTextBlockCells = 8;    -- text mode: one character per 8 x 8 cells (64 x 65 characters)
 Definitions.PreviewRebuildSeconds = 2.0;  -- while exploring with the preview open, it is rebuilt at maximum this frequently
 Definitions.PreviewColors = { Both = 0xFFC9A37A, OnlyCurrent = 0xFF4FB0E0, OnlySelected = 0xFF6AB34F, Fog = 0xFF312D2A };
-Definitions.PreviewCharacters = { Both = "#", OnlyCurrent = "-", OnlySelected = "+", Fog = "." };
 
 --
 -- Field lists
@@ -76,7 +72,6 @@ Definitions.IconListFields = { "MapIconInfoList", "OriginAreaMapIconInfoList", "
 -- Settings
 Definitions.SettingsDefaults   = {
   bFogOfWar = true, bShowRealMapProgress = false,
-  PreviewMode = "Overlay",      -- @todo confirm draw paints over the panel. "Overlay" (draw.filled_rect over the panel) or "Text"
   bPreviewFlipVertical = false, -- @todo confirm that mask row 0 is the top of the game's map
 }
 -- Settings file keys left from prototyping, some of my local save dta is stored it in this format

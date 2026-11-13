@@ -108,46 +108,17 @@ end
 
 local function DrawPanel()
   local Slot = InstanceState.CurrentSlot
-  imgui.text("Status: " .. InstanceState.Status .. "   save slot: " .. tostring(Persistence.SignedSlot(Slot)))
+  imgui.text("Status: " .. InstanceState.Status .. " latest loaded save slot: " .. tostring(Persistence.SignedSlot(Slot)))
   if InstanceState.LoadedFogNote ~= nil then imgui.text("Loaded NG+ fog: " .. InstanceState.LoadedFogNote) end
 
   SettingCheckbox("Fog of war in NG+ (clears as you explore this playthrough)", "bFogOfWar")
   SettingCheckbox("Show real map progress (the save's own fog, as before NG+ revealed all)", "bShowRealMapProgress")
   if InstanceState.IconError ~= nil then imgui.text("icon error: " .. InstanceState.IconError) end
 
-  if imgui.button("Save now") == true then Persistence.SaveSlot(Slot) end; imgui.same_line()
+  if imgui.button("Open fog data selector (snapshots and backups of every save)") == true then Selector.Open() end;
   if imgui.button("Reset NG+ fog (this slot)") == true then Persistence.ResetNgPlusFog(); Persistence.SaveSlot(Slot) end; imgui.same_line()
   if imgui.button("Copy real progress into NG+ fog") == true then Backups.CopyRealProgress() end; imgui.same_line()
-  if imgui.button("Reload slot file") == true then Persistence.LoadSlot(Slot) end
 
-  TreeNode("Fog data selector (character, save, fog data)", Selector.Draw);
-
-  local FogFiles, FogFileNames = Backups.GetAllFogFiles()
-  if imgui.button("Refresh fog file list") == true then FogFiles, FogFileNames = Backups.GetAllFogFiles(true) end
-  if #FogFiles > 0 then
-    local SelectedFileIndex = math.min(math.max(InstanceState.SelectedFogFileIndex or 1, 1), #FogFiles)
-    local bSelectionChanged, NewFileIndex = imgui.combo("Fog files (all slots)", SelectedFileIndex, FogFileNames)
-    if bSelectionChanged == true then InstanceState.SelectedFogFileIndex, SelectedFileIndex, InstanceState.SelectedFogFileInfo = NewFileIndex, NewFileIndex, nil end
-    if InstanceState.SelectedFogFileInfo == nil then InstanceState.SelectedFogFileInfo = Backups.DescribeFogFile(FogFiles[SelectedFileIndex]) end
-    imgui.text("  " .. InstanceState.SelectedFogFileInfo)
-
-    local bLoadClicked = imgui.button("Load selected fog file into NG+ fog") == true
-    if bLoadClicked == true then Backups.LoadFogFile(FogFiles[SelectedFileIndex]) end
-  end
-
-
-  local CopyBackups = Backups.GetCopyBackups(Slot)
-  if #CopyBackups > 0 then
-    local BackupNames = {}
-    for BackupIndex = #CopyBackups, 1, -1 do BackupNames[#BackupNames + 1] = CopyBackups[BackupIndex].name end -- newest first
-
-    local SelectedIndex = math.min(math.max(InstanceState.SelectedBackupIndex or #CopyBackups, 1), #CopyBackups)
-    local bChanged, ListPosition = imgui.combo("Copy backups (this slot)", #CopyBackups - SelectedIndex + 1, BackupNames)
-    local bRevertClicked = imgui.button("Revert NG+ fog to selected backup") == true;
-
-    if bChanged == true then InstanceState.SelectedBackupIndex = #CopyBackups - ListPosition + 1 end
-    if bRevertClicked == true then Backups.RevertToBackup(Slot, SelectedIndex) end
-  end
   TreeNode("Diagnostics", DrawDiagnostics)
 end
 

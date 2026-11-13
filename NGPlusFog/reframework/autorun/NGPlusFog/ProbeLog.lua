@@ -76,9 +76,9 @@ local function DescribeVerification()
   Add("Slot layout", Calculation == nil and "not seen yet: open the game's load menu" or table.concat(CalculatedSlots, ", "));
 
   local Drawing = FindNewest("preview_capabilities");
-  Add("Fog preview", Drawing == nil and "not seen yet: open the selector's preview"
-    or string.format("draw.filled_rect %s, get_cursor_screen_pos %s, invisible_button %s; check by eye: overlay visible (else Preview mode Text), top of the preview = top of the game's map (else Flip vertically)",
-      tostring(Drawing.draw_filled_rect), tostring(Drawing.get_cursor_screen_pos), tostring(Drawing.invisible_button)));
+  Add("Selector window", Drawing == nil and "not seen yet: open the fog data selector"
+    or string.format("window draw list %s, child window %s, set_cursor_screen_pos %s; check by eye: the preview shows inside the window, top of the preview = top of the game's map (else Flip vertically)",
+      tostring(Drawing.get_window_draw_list), tostring(Drawing.begin_child_window), tostring(Drawing.set_cursor_screen_pos)));
 
   local _NewCycle, NewCycleCount = FindNewest("make_loop_save_data");
   Add("New cycle reset", NewCycleCount == 0 and "not seen yet: only when the next NG+ cycle starts" or string.format("makeLoopSaveData ran %d times", NewCycleCount));

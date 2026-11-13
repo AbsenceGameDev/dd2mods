@@ -12,6 +12,7 @@ local Icons       = require("NGPlusFog.Icons")
 local Tick        = require("NGPlusFog.Tick")
 local Panel       = require("NGPlusFog.Panel")
 local LoadMenu    = require("NGPlusFog.LoadMenu");
+local Selector    = require("NGPlusFog.Selector");
 
 --
 -- Install
@@ -22,3 +23,4 @@ Icons.InstallHooks()
 LoadMenu.InstallHooks();
 Tick.Install()
 Panel.Install()
+Selector.Install()

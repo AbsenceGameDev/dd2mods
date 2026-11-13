@@ -41,7 +41,6 @@ local InstanceState = {
   SlotFileState = {},           -- slot -> { Sequence, NextRingIndex }
   CopyBackups = {},             -- slot key -> list of { name, file }
   AllFogFiles = nil,            -- list of { name, file }: every fog file of every slot (cached fs.glob result)
-  AllFogFileNames = nil,        -- dropdown labels for AllFogFiles, same order
   Selector =                    -- fog data selector: selection, grouped slots, per-slot row cache
     { 
       RowsBySlot = {}, 

@@ -238,6 +238,7 @@ end
 --- @brief Writes the current NG+ fog as the next snapshot in the slot's ring
 local function SaveSlot(Slot)
   if Slot == nil then return end
+  if Slot <= -1 or Slot >= 100 then return end
 
   if InstanceState.PendingPickSlot ~= nil then PickPendingSnapshot() end -- a save right after a load must not store the still-empty fog
 
@@ -274,7 +275,8 @@ end
 --
 -- Save and load hooks
 
---- @brief The one form slots are stored and compared in: unsigned 32-bit (autosave -1 -> 4294967295).
+--- @brief TODO REMOVE, from furhter looking at it -1 seems to be some shared save data file which is not relevant to us, need to ignore it
+--- unsigned 32-bit (autosave -1 -> 4294967295).
 --- Accepts an integer or an integral float, signed or unsigned; anything else is nil.
 local function NormalizeSlot(Slot)
   local IntegerSlot = type(Slot) == "number" and math.tointeger(Slot) or nil;
@@ -282,11 +284,14 @@ local function NormalizeSlot(Slot)
   return IntegerSlot & 0xFFFFFFFF;
 end
 
---- @brief Slot as the game numbers it (autosaves negative), for display only
+--- @brief Slot as the game numbers it (autosaves negative), for display only. 
+--- @Note will just remove this, turns out negative saves are some mumbo jumbo shared by all saves, so no touching it!
 local function SignedSlot(Slot)
-  local UnsignedSlot = NormalizeSlot(Slot);
-  if UnsignedSlot == nil then return nil end;
-  return UnsignedSlot - ((UnsignedSlot >> 31) & 1) * 0x100000000;
+  if Slot == nil or Slot <= -1 then return nil end;
+  -- local UnsignedSlot = NormalizeSlot(Slot);
+  -- if UnsignedSlot == nil then return nil end;
+  -- return UnsignedSlot - ((UnsignedSlot >> 31) & 1) * 0x100000000;
+  return Slot;
 end
 
 local function ReadSlotArgument(Argument) return NormalizeSlot(TryCall(sdk.to_int64, Argument)) end;

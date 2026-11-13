@@ -1,4 +1,4 @@
-# NG+ Fog 1.0
+# NG+ Fog 1.6.5 
 
 Map fog of war in NG+ for Dragon's Dogma 2. Works for:
 - The full map, 
@@ -21,7 +21,7 @@ REFramework (Insert) → Script Generated UI → **NG+ Fog**.
 - **'Copy real progress into NG+ fog'** (adds the previous playthrough's exploration to the NG+ fog)
 - **'Reload slot file'**
 
-## Files
+## Files (TODO: Need to update list)
 Entry point: `reframework/autorun/NGPlusFog.lua`; 
 | Module | Contents |
 |---|---|

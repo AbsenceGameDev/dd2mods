@@ -1,0 +1,6 @@
+{
+  "library": "PermadevShared",
+  "version": 1,
+  "provider": "Nemes5",
+  "module_prefix": "PermadevShared.v1.Nemes5."
+}

@@ -1,5 +1,5 @@
 --[[ @author: https://github.com/AbsenceGameDev. NG+ Fog - Definitions
-  - Constants shared by every NG+ Fog module.
+  - Constants shared by submodules.
   - Names written in CAPITALS are for behaviours not yet confirmed in game.
 ]]
 

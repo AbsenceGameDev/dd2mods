@@ -1,60 +1,50 @@
-# NG+ Fog 1.6.5 
+# Dragon's Dogma 2 mods (Permadev)
 
-Map fog of war in NG+ for Dragon's Dogma 2. Works for:
-- The full map, 
-- the minimap, 
-- the cave and interior maps
-- Hides icon behind the fog of war
+Mods for Dragon's Dogma 2 by https://github.com/AbsenceGameDev. <br>
+The REFramework mods are pure Lua with no native plugins, and install with Fluffy Mod Manager.
 
-Requires REFramework. Install with Fluffy Mod Manager or manually.
+## Projects
 
-## Settings
-REFramework (Insert) → Script Generated UI → **NG+ Fog**.
-| Setting | Effect |
-|---|---|
-| **Fog of war in NG+** | On: fog clears as you explore this playthrough. Off: the vanilla NG+ map (fully revealed). |
-| **Show real map progress** | Uses the save's own fog, as it was before NG+ revealed everything, with map icons hidden by that fog. Overrides the other setting while enabled. |
+| Folder | Mod | Status | Summary |
+|---|---|---|---|
+| `NGPlusFog/` | Rediscovery (NG+ Fog) | 1.6.5 | Restores the map's fog of war in NG+ without turning NG+ features off. The full map, minimap, cave, and interior maps clear only where you explore in the current playthrough. Includes a fog data selector window for loading any stored fog snapshot or backup. |
+| `Nemes5/` | Nemes!5: Toil & Trouble | 0.1.0, foundation only | Rival officers who remember the Arisen, 14 factions at war over territory, a Keep to claim for base of operations, a war room with scouts and captives, and a ghost-form revival. No gameplay yet. |
 
-## Buttons 
-- **'Save now'**
-- **'Reset NG+ fog (this slot)'**
-- **'Copy real progress into NG+ fog'** (adds the previous playthrough's exploration to the NG+ fog)
-- **'Reload slot file'**
+Each project has its own README under the path `reframework/autorun/docs/<Mod>/`
 
-## Files (TODO: Need to update list)
-Entry point: `reframework/autorun/NGPlusFog.lua`; 
-| Module | Contents |
-|---|---|
-| `Definitions` | Constants, game types, unconfirmed (CAPITALS) assumptions |
-| `State` | Settings and runtime state shared by every module |
-| `Core` | Helpers: protected calls, field access, raw array words, hook install |
-| `Scope` | NG+ flag and mask-array swap while map code runs; map scope hooks |
-| `Masks` | Game masks, private copies, bitmap helpers; exploration mirror hook |
-| `Persistence` | Snapshot ring per save slot; save and load hooks |
-| `Backups` | Copy real progress, timestamped backups, revert |
-| `Icons` | Icons in fog on the full map; drawing and cursor hooks |
-| `Tick` | Safety guards and the per-tick state update |
-| `Panel` | Settings panel and diagnostics probe |
+## Requirements
 
-## Icons
-- Full-map icons keep their map coordinates for drawing. Each icon under fog is switched off. During the game's cursor search only it is temporarliy moved off the map, so the cursot cannot target icons behind fog. 
+- Dragon's Dogma 2 with [REFramework](https://github.com/praydog/REFramework) (REFramework mods only).
+- Fluffy Mod Manager, or a manual copy of each mod's `reframework/` folder into the game folder.
 
-## Saving
-- NG+ fog data is stored per save slot as in a list of the 8 latest snapshots: `reframework/data/NGPlusFog/slot_<n>_h0.json` to `_h7.json`. A snapshot is written whenever the game saves, and holds the fog, a sequence number, the save's play time and its in-game time. If the save is older than every stored snapshot, the oldest snapshot is used.
+## Layout of a REFramework mod
 
-## QA
-- **Tested and confirmed (2026-11-05):** Reverting a savefile also loads the correct fog data
-- **Tested and confirmed (2026-11-05):** Vendor stocks keep high-level gear with the mod on, off, and in real-progress mode
-- **Tested and confirmed (2026-11-05):** Manual saves, autosaves, inn saves and interim saves each use their own slot number, and all save and load their fog correctly
-- **Tested and confirmed (2026-11-05):** The game's own saves cannot be affected by a crash while the map is open. The flag and array changes exist only in memory, and both are restored before the game prepares save data
-- **Tested and confirmed (2026-11-05):** General testing regarding fog, all seems to work as expected as far as I can test
+```
+<Mod>/                         repository root, also the Fluffy package root
+├─ modinfo.ini                 name, version, description, author
+├─ <Mod>_README.md
+├─ Tools/                      not shipped: stub runtime, dump verifier, offline tests
+└─ reframework/
+   ├─ autorun/
+   │  ├─ <Mod>.lua             entry point; REFramework runs only top-level files
+   │  └─ <Mod>/                modules, loaded with require("<Mod>.<Module>")
+   └─ data/<Mod>/              settings, per-save data, probe log
+```
 
-## Not yet confirmed 
-My own save is not close enough to another ng+ cycle to test this
-- The NG+ fog is cleared when `GuiManager.makeLoopSaveData()` runs, which is assumed to be the creation of the next NG+ cycle. The `new_cycle_resets` counter records when it happens.
+All REFramework scripts share one Lua state, so every module name carries its mod's prefix.
 
-## Shorthand reminders 
-in case things break after an update, I would expect one of these to have changed
-- `app.ui040205`: full map
-- `app.ui020301`: mini map
-- `app.GUIMaskPainter`: fog painters
+## Shared library (PermadevShared)
+Code used by more than one mod: protected calls, hooks, the per-save-slot snapshot store and the probe log.
+
+- Mod ships their own copy at `autorun/PermadevShared/v<N>/<Mod>/`, with a marker file `data/PermadevShared/versions/v<N>_<Mod>.json`. Different mods never install the same file, so uninstalling one never breaks another. 
+- At startup each mod's `Shared.lua` picks the newest copy installed by **any** Permadev mod.
+- Shared modules hold no state; a mod passes its own state in. 
+
+## Testing
+- **Offline:** each mod's `Tools/` runs its modules under a REFramework stub (Lua 5.4 through Python's lupa) and checks hooked types, methods, and fields against a REFramework type dump of the game
+- **In game:** install, play the listed steps, then read the panel's Verification section or send `probe_events.json`.
+
+## Notes
+- **Save slots** (`app.GameSystem`): 3 characters, 3 slots each;  slot[0 + (5×CharIdx), 1 + (5×CharIdx) , 4 + (5×CharIdx)], which resolves to Char0 = [0,1,4]  Char1 = [5,6,9], Char2 = [10,11,14]
+- **`fs.glob`** searches only `reframework/data` and returns backslash paths.
+- **`draw.*`** paints behind every ImGui window; drawing inside a window goes through `imgui.get_window_draw_list()`.
